@@ -1,2 +1,8 @@
-# news-trend-analyzer
-A Python-based news trend analysis pipeline that collects news articles, processes text, extracts topics, and visualizes topic and trends over time. Built for rapid insights and easy extension.
+# News Trend Analyzer (Automated)
+An Python-based end-to-end automated news trend analysis pipeline that:
+- Collects news articles on a schedule  
+- Processes and analyzes text sentiment and topics  
+- Stores results in a database  
+- Visualizes trends in a dashboard
+
+## Architecture
