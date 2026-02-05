@@ -1,0 +1,5 @@
+feedparser
+psycopg2-binary
+python-dateutil
+textblob
+streamlit

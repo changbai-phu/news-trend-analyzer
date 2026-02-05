@@ -19,3 +19,5 @@ ENV PYTHONPATH=/app/src
 # 7. The command to run your script
 CMD ["python", "-m", "ingestion.fetch_news"]
 # CMD ["python", "-m", "storage.init_db"]
+
+RUN python -m textblob.download_corpora
