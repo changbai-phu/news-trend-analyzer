@@ -1,5 +1,22 @@
-feedparser
-psycopg2-binary
-python-dateutil
-textblob
-streamlit
+# Core Dependencies
+feedparser>=6.0.10
+psycopg2-binary>=2.9.0
+python-dateutil>=2.8.2
+textblob>=0.17.1
+streamlit>=1.28.0
+
+# Apache Airflow with PostgreSQL support
+apache-airflow>=2.7.0
+apache-airflow-providers-postgres>=5.10.0
+apache-airflow-providers-python>=4.10.0
+
+# Database and utilities
+SQLAlchemy>=2.0.0
+click>=8.1.0
+
+# Logging and monitoring
+python-logging-loki>=0.3.2
+
+# Development and testing (optional)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
