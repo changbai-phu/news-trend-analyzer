@@ -5,3 +5,6 @@ __pycache__/
 .env.example
 .DS_Store
 *.log
+
+# Secrets file
+secrets.toml

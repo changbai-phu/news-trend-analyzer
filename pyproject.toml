@@ -13,7 +13,8 @@ dependencies = [
     "psycopg[binary]",
     "textblob",
     "streamlit",
-    "pandas"
+    "pandas",
+    "sqlalchemy"
 ]
 
 [tool.setuptools.packages.find]

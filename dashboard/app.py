@@ -3,30 +3,23 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import os
-import getpass
+import toml
+from sqlalchemy import create_engine
 
 # Set up page
 st.set_page_config(page_title="News Sentiment Trends", layout="wide")
 st.title("News Trend Analyer")
 
-def get_connection():
-    # Connect to the newly created 'news_db' database using psycopg3
-    db_name = os.getenv("DB_NAME", "news_db")
-    db_user = os.getenv("DB_USER", "postgres")
-
-    pwd = getpass.getpass(f"Enter password for {db_user} in news_db: ")
-
-    return psycopg.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        dbname=db_name, 
-        user=db_user,
-        password=pwd,
-        port=os.getenv("DB_PORT", 5432)
-    )
-
-
 def get_data():
-    conn = get_connection()
+    # Load credentials from secrets.toml
+    secrets = toml.load("secrets.toml")
+    db_conf = secrets["database"]
+    db_name = db_conf["db_name"]
+    db_user = db_conf["user"]
+    db_host = db_conf["host"]
+    db_port = db_conf["port"]
+    pwd = db_conf["password"]
+    engine = create_engine(f"postgresql+psycopg://{db_user}:{pwd}@{db_host}:{db_port}/{db_name}")
     query = """
         SELECT r.published_at, r.title, r.source, s.polarity, s.subjectivity 
         FROM raw_articles r
@@ -34,8 +27,7 @@ def get_data():
         ORDER BY r.published_at DESC
         LIMIT 20
     """
-    df = pd.read_sql(query, conn)
-    conn.close()
+    df = pd.read_sql(query, engine)
     return df
 
 try:
