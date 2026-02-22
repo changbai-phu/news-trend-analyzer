@@ -5,7 +5,9 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # 3. Copy your requirements file first (for faster builds)
-COPY requirements.txt .
+#COPY requirements.txt .
+COPY pyproject.toml .
+RUN pip install .
 
 # 4. Install your python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

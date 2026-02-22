@@ -1,7 +1,7 @@
 
 import feedparser
 from dateutil import parser as date_parser
-from storage.db import get_connection
+from src.storage.db import get_connection
 
 RSS_URL = "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen"
 

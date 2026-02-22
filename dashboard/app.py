@@ -1,21 +1,29 @@
+import psycopg
 import streamlit as st
 import pandas as pd
-import psycopg2
 from pathlib import Path
 import os
+import getpass
 
 # Set up page
 st.set_page_config(page_title="News Sentiment Trends", layout="wide")
 st.title("News Trend Analyer")
 
 def get_connection():
-    return psycopg2.connect(
+    # Connect to the newly created 'news_db' database using psycopg3
+    db_name = os.getenv("DB_NAME", "news_db")
+    db_user = os.getenv("DB_USER", "postgres")
+
+    pwd = getpass.getpass(f"Enter password for {db_user} in news_db: ")
+
+    return psycopg.connect(
         host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "news_db"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
+        dbname=db_name, 
+        user=db_user,
+        password=pwd,
         port=os.getenv("DB_PORT", 5432)
     )
+
 
 def get_data():
     conn = get_connection()

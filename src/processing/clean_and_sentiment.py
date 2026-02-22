@@ -1,6 +1,6 @@
 import re
 from textblob import TextBlob
-from storage.db import get_connection
+from src.storage.db import get_connection
 
 
 def initialize_analysis_tables():
