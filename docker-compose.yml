@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15
     container_name: news-analyzer-db
@@ -21,11 +20,10 @@ services:
     networks:
       - news-analyzer-network
 
-  # Airflow Webserver
   airflow-webserver:
     build:
-      context: ..
-      dockerfile: docker/dockerfile.txt
+      context: .
+      dockerfile: Dockerfile
     container_name: news-analyzer-airflow-web
     depends_on:
       postgres:
@@ -41,9 +39,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../airflow/dags:/opt/airflow/airflow/dags
-      - ../src:/opt/airflow/src
-      - ../data:/opt/airflow/data
+      - ./airflow/dags:/opt/airflow/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
     command: >
       bash -c "airflow db init &&
                airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
@@ -56,11 +54,10 @@ services:
       timeout: 10s
       retries: 5
 
-  # Airflow Scheduler
   airflow-scheduler:
     build:
-      context: ..
-      dockerfile: docker/dockerfile.txt
+      context: .
+      dockerfile: Dockerfile
     container_name: news-analyzer-airflow-scheduler
     depends_on:
       postgres:
@@ -76,18 +73,17 @@ services:
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
       PYTHONPATH: /opt/airflow/src
     volumes:
-      - ../airflow/dags:/opt/airflow/airflow/dags
-      - ../src:/opt/airflow/src
-      - ../data:/opt/airflow/data
+      - ./airflow/dags:/opt/airflow/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
     command: airflow scheduler
     networks:
       - news-analyzer-network
 
-  # Streamlit Dashboard
   streamlit:
     build:
-      context: ..
-      dockerfile: docker/dockerfile.txt
+      context: .
+      dockerfile: Dockerfile
     container_name: news-analyzer-dashboard
     depends_on:
       postgres:
@@ -101,9 +97,9 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ../dashboard:/opt/airflow/dashboard
-      - ../src:/opt/airflow/src
-      - ../data:/opt/airflow/data
+      - ./dashboard:/opt/airflow/dashboard
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
     command: streamlit run /opt/airflow/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
     networks:
       - news-analyzer-network
