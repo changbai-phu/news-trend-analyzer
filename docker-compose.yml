@@ -89,10 +89,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-airflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
-      POSTGRES_DB: ${POSTGRES_DB:-news_analyzer}
-      POSTGRES_HOST: postgres
+      DB_NAME: ${POSTGRES_DB:-news_analyzer}
+      DB_USER: ${POSTGRES_USER:-airflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      DB_HOST: postgres
+      DB_PORT: 5432
       PYTHONPATH: /opt/airflow/src
     ports:
       - "8501:8501"

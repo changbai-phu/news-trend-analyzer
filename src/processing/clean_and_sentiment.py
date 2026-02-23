@@ -4,83 +4,82 @@ from src.storage.db import get_connection
 
 
 def initialize_analysis_tables():
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS processed_articles (
-            article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
-            clean_text TEXT
-        );
+    engine = get_connection()
+    with engine.connect() as conn:
+        cur = conn.connection.cursor()
+        try:
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS processed_articles (
+                article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
+                clean_text TEXT
+            );
 
-        CREATE TABLE IF NOT EXISTS sentiment_scores (
-            article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
-            polarity FLOAT,
-            subjectivity FLOAT,
-            analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-        conn.commit()
-        print("Analysis tables initialized successfully.")
-    except Exception as e:
-        print(f"Error creating analysis tables: {e}")
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
+            CREATE TABLE IF NOT EXISTS sentiment_scores (
+                article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
+                polarity FLOAT,
+                subjectivity FLOAT,
+                analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """)
+            conn.connection.commit()
+            print("Analysis tables initialized successfully.")
+        except Exception as e:
+            print(f"Error creating analysis tables: {e}")
+            conn.connection.rollback()
+        finally:
+            cur.close()
 
 def process_unprocessed_articles():
     """
     Finds articles in raw_articles that haven't been processed yet,
     cleans them, and calculates sentiment.
     """
-    conn = get_connection()
-    cur = conn.cursor()
-
-    try:
-        # 1. Fetch articles that don't exist in processed_articles yet
-        # This prevents re-processing the same data every time
-        cur.execute("""
-            SELECT id, title, content 
-            FROM raw_articles 
-            WHERE id NOT IN (SELECT article_id FROM processed_articles)
-        """)
-        articles = cur.fetchall()
-        
-        if not articles:
-            print("No new articles to process.")
-            return
-
-        print(f"Processing {len(articles)} new articles...")
-
-        for art_id, title, content in articles:
-            full_text = f"{title}. {content or ''}"
+    engine = get_connection()
+    with engine.connect() as conn:
+        cur = conn.connection.cursor()
+        try:
+            # 1. Fetch articles that don't exist in processed_articles yet
+            # This prevents re-processing the same data every time
+            cur.execute("""
+                SELECT id, title, content 
+                FROM raw_articles 
+                WHERE id NOT IN (SELECT article_id FROM processed_articles)
+            """)
+            articles = cur.fetchall()
             
-            cleaned = clean_text(full_text)
-            pol, subj = analyze_sentiment(cleaned)
+            if not articles:
+                print("No new articles to process.")
+                return
 
-            cur.execute("""
-                INSERT INTO processed_articles (article_id, clean_text)
-                VALUES (%s, %s)
-                ON CONFLICT (article_id) DO NOTHING
-            """, (art_id, cleaned))
+            print(f"Processing {len(articles)} new articles...")
 
-            # Step D: Save to sentiment_scores
-            cur.execute("""
-                INSERT INTO sentiment_scores (article_id, polarity, subjectivity)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (article_id) DO NOTHING
-            """, (art_id, pol, subj))
+            for art_id, title, content in articles:
+                full_text = f"{title}. {content or ''}"
+                
+                cleaned = clean_text(full_text)
+                pol, subj = analyze_sentiment(cleaned)
 
-        conn.commit()
-        print("Successfully processed all new articles.")
+                cur.execute("""
+                    INSERT INTO processed_articles (article_id, clean_text)
+                    VALUES (%s, %s)
+                    ON CONFLICT (article_id) DO NOTHING
+                """, (art_id, cleaned))
 
-    except Exception as e:
-        print(f"Error during processing: {e}")
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
+                # Step D: Save to sentiment_scores
+                cur.execute("""
+                    INSERT INTO sentiment_scores (article_id, polarity, subjectivity)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (article_id) DO NOTHING
+                """, (art_id, pol, subj))
+
+            conn.connection.commit()
+            print("Successfully processed all new articles.")
+
+        except Exception as e:
+            print(f"Error during processing: {e}")
+            conn.connection.rollback()
+        finally:
+            cur.close()
 
 def clean_text(text):
     if not text:

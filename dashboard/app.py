@@ -11,6 +11,7 @@ st.set_page_config(page_title="News Sentiment Trends", layout="wide")
 st.title("News Trend Analyer")
 
 def get_data():
+    '''
     # Load credentials from secrets.toml
     secrets = toml.load("secrets.toml")
     db_conf = secrets["database"]
@@ -19,6 +20,15 @@ def get_data():
     db_host = db_conf["host"]
     db_port = db_conf["port"]
     pwd = db_conf["password"]
+    '''
+    # Use environment variables for Docker
+    db_name = os.getenv("DB_NAME", "news_analyzer")
+    db_user = os.getenv("DB_USER", "airflow")
+    db_host = os.getenv("DB_HOST", "postgres")
+    db_port = os.getenv("DB_PORT", "5432")
+    pwd = os.getenv("DB_PASSWORD")  # Must be set in Docker env
+    if not pwd:
+        raise RuntimeError("DB_PASSWORD environment variable must be set for Docker deployment.")
     engine = create_engine(f"postgresql+psycopg://{db_user}:{pwd}@{db_host}:{db_port}/{db_name}")
     query = """
         SELECT r.published_at, r.title, r.source, s.polarity, s.subjectivity 
