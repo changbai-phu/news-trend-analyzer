@@ -11,7 +11,7 @@ sys.path.insert(0, "/opt/airflow/src")
 
 from ingestion.fetch_news import fetch_and_store
 from processing.clean_and_sentiment import initialize_analysis_tables, process_unprocessed_articles
-from storage.db import initialize_db
+from storage.db import initialize_db, get_connection
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ with DAG(
         doc_md="Pipeline start marker"
     )
 
+    '''
     # Task 2: Initialize database schema
     init_db_task = PythonOperator(
         task_id="initialize_database",
@@ -52,9 +53,11 @@ with DAG(
         doc_md="Create or verify database tables (raw_articles)",
         pool="default_pool",
     )
+    '''
 
-    # Task 3: Initialize analysis tables for processing
-    init_analysis_task = PythonOperator(
+
+    # Task: Initialize analysis tables for processing
+    initialize_analysis_tables_task = PythonOperator(
         task_id="initialize_analysis_tables",
         python_callable=initialize_analysis_tables,
         doc_md="Create or verify analysis tables (processed_articles, sentiment_scores)",
@@ -87,4 +90,4 @@ with DAG(
     )
 
     # Define task dependencies
-    start_task >> init_db_task >> init_analysis_task >> fetch_news_task >> process_articles_task >> end_task
+    start_task >> initialize_analysis_tables_task >> fetch_news_task >> process_articles_task >> end_task

@@ -52,9 +52,18 @@ def initialize_db():
     temp_conn.close()
 
     conn = get_connection().connect()
-    print(f"Connected to: {conn.info.get_parameters()}")
+    # Print connection info for SQLAlchemy/psycopg3
+    try:
+        # For SQLAlchemy connection, get raw psycopg connection
+        dsn = conn.connection.info.dsn_parameters
+        print(f"Connected to: {dsn}")
+    except AttributeError:
+        try:
+            print(f"Connected to: {conn.connection.info}")
+        except Exception:
+            print(f"Connected to: {conn}")
 
-    cur = conn.cursor()
+    cur = conn.connection.cursor()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS raw_articles (
         id SERIAL PRIMARY KEY,

@@ -1,6 +1,8 @@
 # 1. Use the official Python image (use the version matching your mac)
 FROM python:3.11-slim
 
+ENV PATH="/root/.local/bin:/usr/local/bin:${PATH}"
+
 # 2. Set the working directory inside the container
 WORKDIR /app
 
@@ -9,7 +11,13 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml requirements.txt* ./
 
+# copy src first to leverage Docker cache for dependencies
+COPY src ./src 
+
 # 4. Install your python dependencies
+RUN pip install --no-cache-dir --default-timeout=1000 --upgrade pip setuptools
+RUN pip install --no-cache-dir --default-timeout=1000 textblob
+RUN python -m textblob.download_corpora
 RUN pip install --no-cache-dir .
 
 # 5. Copy the rest of your project code

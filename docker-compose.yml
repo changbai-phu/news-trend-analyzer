@@ -1,4 +1,4 @@
-version: "3.8"
+# version: "3.8"
 
 services:
   postgres:
@@ -20,32 +20,51 @@ services:
     networks:
       - news-analyzer-network
 
-  airflow-webserver:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: news-analyzer-airflow-web
+  # Dedicated service to run src/storage/init_db.py
+  init-db:
+    build: .
+    container_name: news-analyzer-init-db
     depends_on:
       postgres:
         condition: service_healthy
     environment:
+      PYTHONPATH: /opt/airflow
+      DB_NAME: ${POSTGRES_DB:-news_analyzer}
+      DB_USER: ${POSTGRES_USER:-airflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      DB_HOST: postgres
+    volumes:
+      - ./src:/opt/airflow/src
+    command: python /opt/airflow/src/storage/init_db.py
+    networks:
+      - news-analyzer-network
+
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    container_name: news-analyzer-airflow-web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully # Waits for init_db.py to finish
+    environment:
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/airflow/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
-      PYTHONPATH: /opt/airflow/src
+      PYTHONPATH: /opt/airflow:/opt/airflow/src
     ports:
       - "8080:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/airflow/dags
       - ./src:/opt/airflow/src
       - ./data:/opt/airflow/data
-    command: >
-      bash -c "airflow db init &&
-               airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
-               airflow webserver"
+    command: bash -c "airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow webserver"
     networks:
       - news-analyzer-network
     healthcheck:
@@ -68,10 +87,10 @@ services:
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/airflow/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
-      PYTHONPATH: /opt/airflow/src
+      PYTHONPATH: /opt/airflow:/opt/airflow/src
     volumes:
       - ./airflow/dags:/opt/airflow/airflow/dags
       - ./src:/opt/airflow/src
@@ -94,14 +113,14 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
       DB_HOST: postgres
       DB_PORT: 5432
-      PYTHONPATH: /opt/airflow/src
+      PYTHONPATH: /opt/airflow:/opt/airflow/src
     ports:
       - "8501:8501"
     volumes:
       - ./dashboard:/opt/airflow/dashboard
       - ./src:/opt/airflow/src
       - ./data:/opt/airflow/data
-    command: streamlit run /opt/airflow/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+    command: streamlit run /opt/airflow/dashboard/app.py
     networks:
       - news-analyzer-network
 
