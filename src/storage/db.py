@@ -25,6 +25,7 @@ def initialize_db():
         #print(f"Connected to: {conn.get_dsn_parameters()}")  #this is for psycopg2
         print(f"Connected to: {conn.info.get_parameters()}") 
 '''
+    target_db = os.getenv("DB_NAME", "news_analyzer")
     
     # Use Docker environment variables for connection
     db_host = os.getenv("DB_HOST", "postgres")
@@ -45,10 +46,10 @@ def initialize_db():
     )
 
     with temp_conn.cursor() as cur:
-        cur.execute("SELECT 1 FROM pg_database WHERE datname = 'news_analyzer'")
+        cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (target_db,))
         if not cur.fetchone():
-            cur.execute("CREATE DATABASE news_analyzer")
-            print("Database 'news_analyzer' created.")
+            cur.execute("CREATE DATABASE %s", (target_db,))
+            print(f"Database '{target_db}' created.")
     temp_conn.close()
 
     conn = get_connection().connect()

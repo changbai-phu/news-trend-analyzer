@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -14,7 +14,8 @@ dependencies = [
     "textblob",
     "streamlit",
     "pandas",
-    "sqlalchemy"
+    "sqlalchemy>=1.4.24",
+    "apache-airflow[postgres]==2.9.0"
 ]
 
 [tool.setuptools.packages.find]

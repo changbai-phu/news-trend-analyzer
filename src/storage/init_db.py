@@ -1,4 +1,4 @@
-from db import initialize_db
+from storage.db import initialize_db
 
 if __name__ == "__main__":
     print("Starting script...") 
