@@ -2,8 +2,8 @@
 # Core Dependencies (from pyproject.toml)
 python-dateutil
 feedparser
-psycopg
-psycopg[binary]
+# psycopg2
+psycopg2-binary
 textblob
 streamlit
 pandas

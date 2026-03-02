@@ -45,7 +45,7 @@ with DAG(
         doc_md="Pipeline start marker"
     )
 
-    '''
+    ''' #### Initialize in docker-compose instead to avoid permission issues with Airflow's default user
     # Task 2: Initialize database schema
     init_db_task = PythonOperator(
         task_id="initialize_database",
