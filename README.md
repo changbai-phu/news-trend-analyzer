@@ -8,8 +8,8 @@ An Python-based end-to-end automated news trend analysis pipeline that:
 
 ## Table of Contents
 * [Tech Stack](#tech-stack)
-* [Demo Screenshots](#demo-screenshots)
 * [Architecture](#architecture)
+* [Demo Screenshots](#demo-screenshots)
 * [Quick Start](#quick-start)
 * [Airflow DAG Details](#airflow-dag-details)
 * [Some Troubleshooting](#some-troubleshooting)
@@ -79,7 +79,7 @@ docker-compose up --build -d
 
 ## Airflow DAG Details
 
-The DAG `news_trend_analyzer_pipeline` (`airflow/dags/news-pipeline.py`) has these tasks:
+The DAG `news_trend_analyzer_pipeline` (defined in `airflow/dags/news-pipeline.py`) consists of the following tasks:
 
 * **initialize_analysis_tables**
 
@@ -95,7 +95,7 @@ The DAG `news_trend_analyzer_pipeline` (`airflow/dags/news-pipeline.py`) has the
 
 * **process_and_analyze_articles**
 
-  * Cleans text, removes duplicates, performs sentiment analysis, and stores results
+  * Cleans raw article text, removes duplicates, performs sentiment analysis, and stores results in `sentiment_scores`.
   * Depends on: `fetch_news_articles`
 
 * **Start & End markers** – dummy tasks for visual clarity
@@ -113,23 +113,23 @@ The DAG runs daily (`@daily`) and can also be triggered manually via Airflow UI.
 
 * **Airflow webserver: `database "airflow" does not exist`**
 
-  * Cause: Airflow tried to connect to wrong DB (`airflow`)
-  * Solution: Ensure `init_db` ran correctly; check SQLAlchemy/psycopg2 versions
+  * Cause: Airflow is trying to connect to a database named `airflow`, but my database is news_analyzer. 
+  * Solution: Ensure `init_db` ran correctly that actually created the news_analyzer database successfully, plus check SQLAlchemy/psycopg2 versions that if compatible with `apache-airflow[postgres]==2.9.0`.
 
 * **Streamlit: `Engine object has no attribute 'cursor'`**
 
-  * Cause: Pandas expects raw connection, not SQLAlchemy engine
-  * Solution: Use `conn.execute()` or provide raw DB-API connection
+  * Cause: Incorrect usage of SQLAlchemy engine with pd.read_sql. Pandas expects either a raw DB-API connection or an engine, but some versions may mis-handle connections.
+  * Solution: Use `conn.execute()` and save queried results to a new `dataframe`.
 
 * **Airflow: `RuntimeError: DB_PASSWORD environment variable must be set`**
 
-  * Cause: `get_connection()` requires `DB_PASSWORD`
-  * Solution: Add `DB_PASSWORD: ${POSTGRES_PASSWORD:-xxx}` in `docker-compose.yml`
+  * Cause: The custom function `get_connection()` requires `DB_PASSWORD`, but the variable is not passed to Airflow containers.
+  * Solution: Add `DB_PASSWORD: ${POSTGRES_PASSWORD:-xxx}` to the environment section of airflow-webserver and airflow-scheduler in docker-compose.yml.
 
 * **`initialize_analysis_tables` fails silently**
 
   * Cause: Table creation SQL may have errors or lack error handling
-  * Solution: Run manually inside container:
+  * Solution: Run manually inside container to see the exact error:
 
 ```bash
 docker exec -it news-analyzer-airflow-web python -c "from processing.clean_and_sentiment import initialize_analysis_tables; initialize_analysis_tables()"
