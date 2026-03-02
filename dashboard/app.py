@@ -1,48 +1,85 @@
 import psycopg2
 import streamlit as st
 import pandas as pd
-from pathlib import Path
 import os
-import toml
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+import time
 
 # Set up page
 st.set_page_config(page_title="News Sentiment Trends", layout="wide")
 st.title("News Trend Analyer")
 
-def get_data():
-    '''
-    # Load credentials from secrets.toml
-    secrets = toml.load("secrets.toml")
-    db_conf = secrets["database"]
-    db_name = db_conf["db_name"]
-    db_user = db_conf["user"]
-    db_host = db_conf["host"]
-    db_port = db_conf["port"]
-    pwd = db_conf["password"]
-    '''
-    # Use environment variables for Docker
+@st.cache_resource
+def get_engine():
+    """
+    Create and cache SQLAlchemy engine.
+    Streamlit reruns scripts frequently — caching prevents reconnecting to Postgres every time.
+    """
     db_name = os.getenv("DB_NAME", "news_analyzer")
     db_user = os.getenv("DB_USER", "airflow")
     db_host = os.getenv("DB_HOST", "postgres")
     db_port = os.getenv("DB_PORT", "5432")
-    pwd = os.getenv("DB_PASSWORD")  # Must be set in Docker env
+    pwd = os.getenv("DB_PASSWORD")
+
     if not pwd:
-        raise RuntimeError("DB_PASSWORD environment variable must be set for Docker deployment.")
-    engine = create_engine(f"postgresql+psycopg2://{db_user}:{pwd}@{db_host}:{db_port}/{db_name}")
-    query = """
-        SELECT r.published_at, r.title, r.source, s.polarity, s.subjectivity 
+        raise RuntimeError(
+            "DB_PASSWORD environment variable must be set for Docker deployment."
+        )
+
+    db_url = (
+        f"postgresql+psycopg2://{db_user}:{pwd}"
+        f"@{db_host}:{db_port}/{db_name}"
+    )
+
+    return create_engine(db_url, pool_pre_ping=True)
+
+@st.cache_data(ttl=60)
+def get_data():
+    """
+    Fetch latest sentiment data.
+    Cached to avoid hitting DB on every widget interaction.
+    """
+    engine = get_engine()
+    query = text("""
+        SELECT
+            r.published_at,
+            r.title,
+            r.source,
+            s.polarity,
+            s.subjectivity
         FROM raw_articles r
-        JOIN sentiment_scores s ON r.id = s.article_id
+        JOIN sentiment_scores s
+            ON r.id = s.article_id
         ORDER BY r.published_at DESC
         LIMIT 20
-    """
-    df = pd.read_sql(query, engine)
+    """)
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn)
+
     return df
 
+# Manual refresh button
+if st.button("🔄 Refresh Now"):
+    st.cache_data.clear()
+    st.experimental_rerun()
+
+# Auto-refresh every 60 seconds
+REFRESH_SECONDS = 30
+st.caption(f"Auto-refreshing every {REFRESH_SECONDS} seconds")
+time.sleep(REFRESH_SECONDS)
+st.experimental_rerun()
+
+# Render dashboard components
 try:
     df = get_data()
     
+    if df.empty:
+        st.warning("No data available yet. Pipeline may still be running.")
+        st.stop()
+
+    last_ts = df['published_at'].max()
+    st.caption(f"Last data timestamp: {last_ts}")
+
     st.subheader("Sentiment Summary")
     avg_sent = df['polarity'].mean()
     st.metric("Overall Market Sentiment", f"{avg_sent:.2f}", delta=None)
@@ -57,7 +94,12 @@ try:
     st.bar_chart(source_sentiment)
 
     st.subheader("Latest Articles")
-    st.dataframe(df[['published_at', 'title', 'polarity']].tail(10))
+    st.dataframe(
+        df[["published_at", "title", "polarity"]]
+        .sort_values("published_at", ascending=False)
+        .head(10),
+        use_container_width=True,
+    )
 
 except Exception as e:
     st.error(f"Could not connect to database: {e}")
