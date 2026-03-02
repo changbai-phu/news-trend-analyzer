@@ -1,4 +1,4 @@
-import psycopg
+import psycopg2
 import streamlit as st
 import pandas as pd
 from pathlib import Path
@@ -29,7 +29,7 @@ def get_data():
     pwd = os.getenv("DB_PASSWORD")  # Must be set in Docker env
     if not pwd:
         raise RuntimeError("DB_PASSWORD environment variable must be set for Docker deployment.")
-    engine = create_engine(f"postgresql+psycopg://{db_user}:{pwd}@{db_host}:{db_port}/{db_name}")
+    engine = create_engine(f"postgresql+psycopg2://{db_user}:{pwd}@{db_host}:{db_port}/{db_name}")
     query = """
         SELECT r.published_at, r.title, r.source, s.polarity, s.subjectivity 
         FROM raw_articles r

@@ -54,8 +54,7 @@ services:
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/airflow/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      # AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://airflow:airflow@postgres:5432/news_analyzer
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/src
@@ -88,7 +87,7 @@ services:
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/airflow/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:-airflow}@postgres:5432/${POSTGRES_DB:-news_analyzer}
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/src

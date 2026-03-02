@@ -9,12 +9,11 @@ description = "A project to analyze news trends"
 dependencies = [
     "python-dateutil",
     "feedparser",
-    "psycopg",
-    "psycopg[binary]",
+    "psycopg2-binary",
     "textblob",
     "streamlit",
     "pandas",
-    "sqlalchemy>=1.4.36",
+    "sqlalchemy>=1.4.36, <2.0",
     "apache-airflow[postgres]==2.9.0"
 ]
 

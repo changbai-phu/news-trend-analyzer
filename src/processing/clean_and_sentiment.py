@@ -1,33 +1,34 @@
 import re
 from textblob import TextBlob
 from src.storage.db import get_connection
+from sqlalchemy import text
 
 
 def initialize_analysis_tables():
     engine = get_connection()
-    with engine.connect() as conn:
-        cur = conn.connection.cursor()
+    with engine.begin() as conn:
         try:
-            cur.execute("""
+            conn.execute(text("""
             CREATE TABLE IF NOT EXISTS processed_articles (
                 article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
                 clean_text TEXT
             );
+            """))
 
+            conn.execute(text("""
             CREATE TABLE IF NOT EXISTS sentiment_scores (
                 article_id INT PRIMARY KEY REFERENCES raw_articles(id) ON DELETE CASCADE,
                 polarity FLOAT,
                 subjectivity FLOAT,
                 analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-            """)
-            conn.connection.commit()
+            """))
+
             print("Analysis tables initialized successfully.")
+        
         except Exception as e:
             print(f"Error creating analysis tables: {e}")
-            conn.connection.rollback()
-        finally:
-            cur.close()
+            
 
 def process_unprocessed_articles():
     """
@@ -35,17 +36,16 @@ def process_unprocessed_articles():
     cleans them, and calculates sentiment.
     """
     engine = get_connection()
-    with engine.connect() as conn:
-        cur = conn.connection.cursor()
+    with engine.begin() as conn:
         try:
             # 1. Fetch articles that don't exist in processed_articles yet
             # This prevents re-processing the same data every time
-            cur.execute("""
+            result  = conn.execute(text("""
                 SELECT id, title, content 
                 FROM raw_articles 
                 WHERE id NOT IN (SELECT article_id FROM processed_articles)
-            """)
-            articles = cur.fetchall()
+            """))
+            articles = result.fetchall()
             
             if not articles:
                 print("No new articles to process.")
@@ -53,33 +53,42 @@ def process_unprocessed_articles():
 
             print(f"Processing {len(articles)} new articles...")
 
+            insert_processed = text("""
+                INSERT INTO processed_articles (article_id, clean_text)
+                VALUES (:article_id, :clean_text)
+                ON CONFLICT (article_id) DO NOTHING
+            """)
+
+            insert_sentiment = text("""
+                INSERT INTO sentiment_scores
+                    (article_id, polarity, subjectivity)
+                VALUES (:article_id, :polarity, :subjectivity)
+                ON CONFLICT (article_id) DO NOTHING
+            """)
+
+            # Process each article: clean text and analyze sentiment
             for art_id, title, content in articles:
                 full_text = f"{title}. {content or ''}"
                 
                 cleaned = clean_text(full_text)
                 pol, subj = analyze_sentiment(cleaned)
 
-                cur.execute("""
-                    INSERT INTO processed_articles (article_id, clean_text)
-                    VALUES (%s, %s)
-                    ON CONFLICT (article_id) DO NOTHING
-                """, (art_id, cleaned))
+                conn.execute(insert_processed, {
+                    "article_id": art_id,
+                    "clean_text": cleaned
+                })
 
-                # Step D: Save to sentiment_scores
-                cur.execute("""
-                    INSERT INTO sentiment_scores (article_id, polarity, subjectivity)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (article_id) DO NOTHING
-                """, (art_id, pol, subj))
+                conn.execute(insert_sentiment, {
+                    "article_id": art_id,
+                    "polarity": pol,
+                    "subjectivity": subj
+                })
 
-            conn.connection.commit()
             print("Successfully processed all new articles.")
 
         except Exception as e:
             print(f"Error during processing: {e}")
-            conn.connection.rollback()
-        finally:
-            cur.close()
+
 
 def clean_text(text):
     if not text:
