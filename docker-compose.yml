@@ -58,6 +58,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/src
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
     ports:
       - "8080:8080"
     volumes:
@@ -91,6 +92,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__UNIT_TEST_MODE: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/src
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
     volumes:
       - ./airflow/dags:/opt/airflow/airflow/dags
       - ./src:/opt/airflow/src

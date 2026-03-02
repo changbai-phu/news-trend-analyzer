@@ -14,6 +14,7 @@ dependencies = [
     "streamlit",
     "pandas",
     "sqlalchemy>=1.4.36, <2.0",
+    "streamlit-autorefresh",
     "apache-airflow[postgres]==2.9.0"
 ]
 

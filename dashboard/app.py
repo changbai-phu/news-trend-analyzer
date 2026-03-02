@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import os
 from sqlalchemy import create_engine, text
-import time
+from streamlit_autorefresh import st_autorefresh 
 
 # Set up page
 st.set_page_config(page_title="News Sentiment Trends", layout="wide")
@@ -33,14 +33,26 @@ def get_engine():
 
     return create_engine(db_url, pool_pre_ping=True)
 
-@st.cache_data(ttl=60)
+
+# Manual refresh button
+if st.button("🔄 Refresh Now"):
+    st.cache_data.clear()
+    st.rerun()
+
+# Auto-refresh every 30 seconds
+REFRESH_SECONDS = 30
+st.caption(f"Auto-refreshing every {REFRESH_SECONDS} seconds")
+st_autorefresh(interval=REFRESH_SECONDS * 1000, key="auto")
+
+
+@st.cache_data(ttl=REFRESH_SECONDS)
 def get_data():
     """
     Fetch latest sentiment data.
     Cached to avoid hitting DB on every widget interaction.
     """
     engine = get_engine()
-    query = text("""
+    query = """
         SELECT
             r.published_at,
             r.title,
@@ -52,22 +64,14 @@ def get_data():
             ON r.id = s.article_id
         ORDER BY r.published_at DESC
         LIMIT 20
-    """)
+    """
     with engine.connect() as conn:
-        df = pd.read_sql(query, conn)
+        result = conn.execute(text(query)) 
+        rows = result.fetchall()
+        columns = result.keys()
+        df = pd.DataFrame(rows, columns=columns)
 
     return df
-
-# Manual refresh button
-if st.button("🔄 Refresh Now"):
-    st.cache_data.clear()
-    st.experimental_rerun()
-
-# Auto-refresh every 60 seconds
-REFRESH_SECONDS = 30
-st.caption(f"Auto-refreshing every {REFRESH_SECONDS} seconds")
-time.sleep(REFRESH_SECONDS)
-st.experimental_rerun()
 
 # Render dashboard components
 try:
