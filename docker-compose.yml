@@ -124,8 +124,26 @@ services:
     networks:
       - news-analyzer-network
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: news-analyzer-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}        
+    ports:
+      - "5050:80"                                 
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin             
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - news-analyzer-network
+
+
 volumes:
   postgres_data:
+  pgadmin_data:
 
 networks:
   news-analyzer-network:
