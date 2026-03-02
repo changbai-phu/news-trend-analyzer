@@ -14,7 +14,7 @@ dependencies = [
     "textblob",
     "streamlit",
     "pandas",
-    "sqlalchemy>=1.4.24",
+    "sqlalchemy>=1.4.36",
     "apache-airflow[postgres]==2.9.0"
 ]
 
