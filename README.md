@@ -17,7 +17,8 @@ Development is organized into milestones to gradually extend the system toward a
 - [x] Workflow orchestration with Airflow DAGs
 
 ### Milestone 2 — DevOps & Observability (In Progress)
-- [x] CI pipeline with automated unit tests using GitHub Actions
+- [x] CI workflow configured with GitHub Actions to automatically lint, test, and build Docker images
+  - Runs on GitHub-hosted runners (local/cloud-free setup)
 - [ ] Monitoring integration with Prometheus
 - [ ] Grafana dashboards for system and pipeline metrics
 
