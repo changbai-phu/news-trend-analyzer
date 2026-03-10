@@ -6,6 +6,26 @@ An Python-based end-to-end automated news trend analysis pipeline that:
 - Visualizes trends in a real-time dashboard
 - Fully containerized using Docker
 
+## Project Status
+Development is organized into milestones to gradually extend the system toward a production-style data pipeline.
+### Milestone 1 — Core Pipeline (Completed)
+- [x] RSS-based news ingestion
+- [x] Text processing and sentiment analysis
+- [x] Database storage for processed results
+- [x] Streamlit dashboard for visualization
+- [x] Docker containerization
+- [x] Workflow orchestration with Airflow DAGs
+
+### Milestone 2 — DevOps & Observability (In Progress)
+- [x] CI pipeline with automated unit tests using GitHub Actions
+- [ ] Monitoring integration with Prometheus
+- [ ] Grafana dashboards for system and pipeline metrics
+
+### Milestone 3 — Advanced Analysis (Future Work)
+- [ ] Machine learning–based trend detection
+- [ ] LLM-assisted topic summarization
+- [ ] Retrieval-Augmented Generation (RAG) for contextual news insights
+
 ## Table of Contents
 * [Tech Stack](#tech-stack)
 * [Architecture](#architecture)
