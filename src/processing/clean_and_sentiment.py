@@ -25,10 +25,10 @@ def initialize_analysis_tables():
             """))
 
             print("Analysis tables initialized successfully.")
-        
+
         except Exception as e:
             print(f"Error creating analysis tables: {e}")
-            
+
 
 def process_unprocessed_articles():
     """
@@ -40,13 +40,13 @@ def process_unprocessed_articles():
         try:
             # 1. Fetch articles that don't exist in processed_articles yet
             # This prevents re-processing the same data every time
-            result  = conn.execute(text("""
+            result = conn.execute(text("""
                 SELECT id, title, content 
                 FROM raw_articles 
                 WHERE id NOT IN (SELECT article_id FROM processed_articles)
             """))
             articles = result.fetchall()
-            
+
             if not articles:
                 print("No new articles to process.")
                 return
@@ -69,20 +69,18 @@ def process_unprocessed_articles():
             # Process each article: clean text and analyze sentiment
             for art_id, title, content in articles:
                 full_text = f"{title}. {content or ''}"
-                
+
                 cleaned = clean_text(full_text)
                 pol, subj = analyze_sentiment(cleaned)
 
-                conn.execute(insert_processed, {
-                    "article_id": art_id,
-                    "clean_text": cleaned
-                })
+                conn.execute(
+                    insert_processed, {"article_id": art_id, "clean_text": cleaned}
+                )
 
-                conn.execute(insert_sentiment, {
-                    "article_id": art_id,
-                    "polarity": pol,
-                    "subjectivity": subj
-                })
+                conn.execute(
+                    insert_sentiment,
+                    {"article_id": art_id, "polarity": pol, "subjectivity": subj},
+                )
 
             print("Successfully processed all new articles.")
 
@@ -95,12 +93,13 @@ def clean_text(text):
         return ""
 
     text = text.lower()
-    text = re.sub(r"<.*?>", "", text)          # remove HTML
-    text = re.sub(r"http\S+", " ", text)        # remove URLs
-    #text = re.sub(r"[^a-z\s]", "", text)       # command this to keep ! and ? for sentiment
-    text = re.sub(r"\s+", " ", text).strip()   # normalize spaces
+    text = re.sub(r"<.*?>", "", text)  # remove HTML
+    text = re.sub(r"http\S+", " ", text)  # remove URLs
+    # text = re.sub(r"[^a-z\s]", "", text)       # command this to keep ! and ? for sentiment
+    text = re.sub(r"\s+", " ", text).strip()  # normalize spaces
 
     return text
+
 
 def analyze_sentiment(text):
     if not text.strip():
@@ -109,6 +108,7 @@ def analyze_sentiment(text):
     blob = TextBlob(text)
     return blob.sentiment.polarity, blob.sentiment.subjectivity
 
+
 if __name__ == "__main__":
-    initialize_analysis_tables() # may need to run only once <- NOTE !!!!
+    initialize_analysis_tables()  # may need to run only once <- NOTE !!!!
     process_unprocessed_articles()

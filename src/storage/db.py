@@ -1,21 +1,25 @@
 from sqlalchemy import create_engine
 import psycopg2
-from psycopg2 import sql 
+from psycopg2 import sql
 import os
 import getpass
 from sqlalchemy import text
-# import psycopg  
+
+# import psycopg
+
 
 def initialize_db():
     target_db = os.getenv("DB_NAME", "news_analyzer")
-    
+
     # Use Docker environment variables for connection
     db_host = os.getenv("DB_HOST", "postgres")
     db_user = os.getenv("DB_USER", "airflow")
     db_port = int(os.getenv("DB_PORT", 5432))
     db_password = os.getenv("DB_PASSWORD")
     if not db_password:
-        raise RuntimeError("DB_PASSWORD environment variable must be set for Docker deployment.")
+        raise RuntimeError(
+            "DB_PASSWORD environment variable must be set for Docker deployment."
+        )
 
     # Always connect to 'postgres' database for initial setup
     temp_conn = psycopg2.connect(
@@ -23,9 +27,9 @@ def initialize_db():
         dbname="postgres",
         user=db_user,
         password=db_password,
-        port=db_port
+        port=db_port,
     )
-    temp_conn.autocommit = True 
+    temp_conn.autocommit = True
 
     with temp_conn.cursor() as cur:
         cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (target_db,))
@@ -35,7 +39,7 @@ def initialize_db():
     temp_conn.close()
 
     engine = get_connection()
-    with engine.begin() as conn:  #use engine.begin() to ensure auto-commit for DDL statements
+    with engine.begin() as conn:  # use engine.begin() to ensure auto-commit for DDL statements
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS raw_articles (
                 id SERIAL PRIMARY KEY,
@@ -49,6 +53,7 @@ def initialize_db():
         """))
         print("Table 'raw_articles' created successfully (auto-committed).")
 
+
 def get_connection():
     db_name = os.getenv("DB_NAME", "news_analyzer")
     db_user = os.getenv("DB_USER", "airflow")
@@ -56,7 +61,11 @@ def get_connection():
     db_port = os.getenv("DB_PORT", "5432")
     db_password = os.getenv("DB_PASSWORD")  # Must be set in Docker env
     if not db_password:
-        raise RuntimeError("DB_PASSWORD environment variable must be set for Docker deployment.")
-    
-    engine = create_engine(f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
+        raise RuntimeError(
+            "DB_PASSWORD environment variable must be set for Docker deployment."
+        )
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    )
     return engine

@@ -1,4 +1,3 @@
-
 import feedparser
 from dateutil import parser as date_parser
 from sqlalchemy import text
@@ -9,6 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 RSS_URL = "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen"
+
 
 def fetch_and_store():
     logger.info("Starting RSS feed fetch...")
@@ -26,7 +26,9 @@ def fetch_and_store():
         for entry in feed.entries:
             title = entry.title
             url = entry.link
-            published = date_parser.parse(entry.published) if "published" in entry else None
+            published = (
+                date_parser.parse(entry.published) if "published" in entry else None
+            )
             source = entry.source.title if "source" in entry else "Google News"
             content = entry.summary
 
@@ -43,13 +45,16 @@ def fetch_and_store():
                         "content": content,
                         "url": url,
                         "published_at": published,
-                    }
-    )
+                    },
+                )
                 articles_processed += 1
             except Exception as e:
                 logger.error(f"Failed to insert article '{title}': {e}")
-    logger.info(f"Finished processing RSS feed. Articles processed: {articles_processed}")
+    logger.info(
+        f"Finished processing RSS feed. Articles processed: {articles_processed}"
+    )
+
 
 if __name__ == "__main__":
-    print("Starting fetching...") 
+    print("Starting fetching...")
     fetch_and_store()

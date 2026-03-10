@@ -1,6 +1,6 @@
 from storage.db import initialize_db
 
 if __name__ == "__main__":
-    print("Starting script...") 
+    print("Starting script...")
     initialize_db()
     print("Database initialized successfully.")
